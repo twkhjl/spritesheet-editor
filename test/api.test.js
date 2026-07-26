@@ -21,3 +21,8 @@ test('serves the player shell and model module', async () => {
 test('does not expose the old generation API', async () => {
   await request(createApp()).post('/api/jobs').expect(404);
 });
+
+test('updates settings while number fields are being edited', async () => {
+  const script = await request(createApp()).get('/app.js').expect(200);
+  assert.match(script.text, /input\.addEventListener\('input'/);
+});

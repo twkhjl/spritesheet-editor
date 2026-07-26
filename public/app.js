@@ -226,7 +226,7 @@ elements.dropzone.addEventListener('drop', (event) => {
 });
 
 for (const input of [elements.columns, elements.rows, elements.frames, elements.fps]) {
-  input.addEventListener('change', () => {
+  input.addEventListener('input', () => {
     const wasPlaying = state.playing;
     if (applySettings() && wasPlaying) {
       state.playing = true;

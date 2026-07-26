@@ -3,104 +3,140 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="將單張側身角色圖轉換成 5×5 走路 spritesheet。">
+  <meta name="description" content="在瀏覽器中載入並播放現成的 spritesheet，不上傳任何圖片。">
   <title>Spritesheet Player</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/" aria-label="Walk Cycle Studio 首頁">
+    <a class="brand" href="/" aria-label="Spritesheet Player 首頁">
       <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span>WALK CYCLE<br><b>STUDIO</b></span>
+      <span>SPRITESHEET<br><b>PLAYER</b></span>
     </a>
-    <div class="format-note"><span>OUTPUT</span> 25 FRAMES · 512 PX · PNG</div>
+    <div class="privacy-note"><span class="status-dot"></span> 圖片只留在這個瀏覽器</div>
   </header>
 
   <main class="workspace">
-    <section class="control-panel" aria-labelledby="setup-heading">
-      <div class="section-heading">
-        <span class="step">01</span>
-        <div>
-          <p class="eyebrow">SOURCE FRAME</p>
-          <h1 id="setup-heading">讓角色<br>開始行走。</h1>
-        </div>
+    <aside class="control-panel" aria-labelledby="source-heading">
+      <div class="panel-heading">
+        <p class="eyebrow">SOURCE</p>
+        <h1 id="source-heading">載入圖表，<br><em>讓每格動起來。</em></h1>
+        <p>選擇現成的 spritesheet，再告訴播放器格線怎麼切。圖片不會上傳，也不會被修改。</p>
       </div>
-      <p class="intro">上傳完整側身角色圖。系統會優先使用 NVIDIA 生成走路影片；端點不可用時，自動製作本機機械式循環。</p>
 
-      <form id="job-form" novalidate>
-        <label class="dropzone" id="dropzone" for="image-input">
-          <input id="image-input" name="image" type="file" accept="image/png,image/jpeg,image/webp" required>
-          <img id="source-preview" alt="">
-          <span class="drop-icon" aria-hidden="true">↗</span>
-          <span class="drop-title">放入角色圖</span>
-          <span class="drop-help">PNG / JPEG / WebP，最大 10 MB</span>
-          <span class="file-name" id="file-name"></span>
-        </label>
+      <label class="dropzone" id="dropzone" for="spritesheet-input">
+        <input id="spritesheet-input" type="file" accept="image/png,image/jpeg,image/webp">
+        <span class="drop-glyph" aria-hidden="true">＋</span>
+        <strong>選擇或拖放 spritesheet</strong>
+        <span>PNG、JPEG、WebP</span>
+        <span class="file-name" id="file-name">尚未選擇檔案</span>
+      </label>
 
-        <div class="field-row">
-          <label for="seed">
-            <span>SEED</span>
-            <input id="seed" name="seed" type="number" min="0" max="2147483647" value="0" inputmode="numeric">
+      <section class="settings" aria-labelledby="grid-heading">
+        <div class="settings-heading">
+          <h2 id="grid-heading">格線設定</h2>
+          <span id="capacity">25 格容量</span>
+        </div>
+        <div class="number-grid">
+          <label>
+            <span>欄數</span>
+            <input id="columns" type="number" min="1" step="1" value="5" inputmode="numeric">
           </label>
-          <div class="input-rule">
-            <span>最佳輸入</span>
-            <strong>透明背景 · 全身 · 側面</strong>
-          </div>
+          <label>
+            <span>列數</span>
+            <input id="rows" type="number" min="1" step="1" value="5" inputmode="numeric">
+          </label>
+          <label>
+            <span>總幀數</span>
+            <input id="frames" type="number" min="1" step="1" value="25" inputmode="numeric">
+          </label>
+          <label>
+            <span>FPS</span>
+            <input id="fps" type="number" min="1" max="60" step="1" value="12" inputmode="numeric">
+          </label>
         </div>
+        <label class="switch-row">
+          <span>
+            <strong>循環播放</strong>
+            <small>播完最後一格後回到第一格</small>
+          </span>
+          <input id="loop" type="checkbox" checked>
+          <i aria-hidden="true"></i>
+        </label>
+      </section>
 
-        <button class="generate-button" id="generate-button" type="submit">
-          <span>生成 25 幀走路循環</span>
-          <span aria-hidden="true">→</span>
-        </button>
-      </form>
-
-      <div class="message" id="message" role="status" aria-live="polite"></div>
-    </section>
-
-    <section class="stage-panel" aria-labelledby="stage-heading">
-      <div class="stage-header">
-        <div>
-          <p class="eyebrow">ANIMATION BENCH</p>
-          <h2 id="stage-heading">逐格預覽</h2>
-        </div>
-        <div class="provider-chip" id="provider-chip" hidden></div>
+      <div class="file-meta" id="file-meta">
+        <span>圖片尺寸 <b>—</b></span>
+        <span>單格尺寸 <b>—</b></span>
       </div>
+      <div class="message" id="message" role="status" aria-live="polite">
+        載入圖片後即可播放。
+      </div>
+    </aside>
+
+    <section class="player-panel" aria-labelledby="player-heading">
+      <header class="player-header">
+        <div>
+          <p class="eyebrow">FRAME VIEWER</p>
+          <h2 id="player-heading">逐格燈箱</h2>
+        </div>
+        <div class="frame-readout" aria-live="polite">
+          <span>FRAME</span>
+          <strong id="frame-counter">00 / 25</strong>
+        </div>
+      </header>
 
       <div class="stage" id="stage">
         <div class="empty-state" id="empty-state">
-          <div class="film-grid" id="film-grid" aria-hidden="true"></div>
-          <p>25 個影格會在這裡依序成形</p>
-          <span>左 → 右 · 上 → 下</span>
+          <div class="empty-grid" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <strong>等待 spritesheet</strong>
+          <span>影格依左至右、由上而下讀取</span>
         </div>
 
-        <div class="result-stage" id="result-stage" hidden>
-          <div class="animation-frame">
-            <div id="animation-preview" class="animation-preview" role="img" aria-label="走路循環動畫預覽"></div>
-            <span class="baseline" aria-hidden="true"></span>
+        <div class="preview-area" id="preview-area" hidden>
+          <div class="checkerboard animation-viewport" id="animation-viewport">
+            <div id="animation-preview" class="animation-preview" role="img" aria-label="Spritesheet 動畫預覽"></div>
           </div>
-          <div class="view-tabs" role="group" aria-label="預覽模式">
-            <button class="active" type="button" data-view="animation">循環播放</button>
-            <button type="button" data-view="sheet">5×5 圖表</button>
-          </div>
-          <div class="sheet-frame" id="sheet-frame" hidden>
-            <img id="sheet-preview" alt="5×5 走路 spritesheet">
-            <span class="grid-overlay" aria-hidden="true"></span>
+
+          <div class="sheet-viewport" id="sheet-viewport" hidden>
+            <div class="sheet-wrap">
+              <img id="sheet-preview" alt="完整 spritesheet">
+              <span class="grid-overlay" id="grid-overlay" aria-hidden="true"></span>
+              <span class="frame-cursor" id="frame-cursor" aria-hidden="true"></span>
+            </div>
           </div>
         </div>
       </div>
 
-      <footer class="result-footer">
-        <div class="progress-copy">
-          <span id="stage-copy">WAITING FOR SOURCE</span>
-          <strong id="progress-copy">0%</strong>
+      <div class="view-switcher" role="group" aria-label="預覽模式">
+        <button class="active" type="button" data-view="animation">動畫</button>
+        <button type="button" data-view="sheet">完整圖表</button>
+      </div>
+
+      <footer class="transport">
+        <div class="transport-buttons">
+          <button id="previous-button" class="icon-button" type="button" aria-label="上一幀" disabled>←</button>
+          <button id="play-button" class="play-button" type="button" disabled>
+            <span class="play-icon" aria-hidden="true">▶</span>
+            <span class="play-label">播放</span>
+          </button>
+          <button id="next-button" class="icon-button" type="button" aria-label="下一幀" disabled>→</button>
         </div>
-        <div class="progress-track"><span id="progress-bar"></span></div>
-        <a class="download-button" id="download-button" hidden download="walk-cycle-5x5.png">下載 PNG</a>
+        <label class="zoom-control" for="zoom">
+          <span>預覽縮放</span>
+          <input id="zoom" type="range" min="50" max="200" step="10" value="100">
+          <output id="zoom-value" for="zoom">100%</output>
+        </label>
       </footer>
     </section>
   </main>
 
-  <template id="film-cell-template"><span></span></template>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

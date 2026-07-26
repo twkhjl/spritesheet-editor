@@ -1,5 +1,5 @@
 {
-  "name": "nim-walk-cycle-studio",
+  "name": "spritesheet-player",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -17,8 +17,5 @@
   },
   "devDependencies": {
     "supertest": "^7.1.4"
-  },
-  "overrides": {
-    "sharp": "^0.35.3"
   }
 }

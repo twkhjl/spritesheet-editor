@@ -7,6 +7,12 @@ test('serves the player shell and model module', async () => {
   const app = createApp();
   const page = await request(app).get('/').expect(200);
   assert.match(page.text, /Spritesheet Player/);
+  assert.match(page.text, /id="spritesheet-input"/);
+  assert.match(page.text, /id="play-button"/);
+  assert.match(page.text, /id="columns"/);
+  assert.match(page.text, /id="rows"/);
+  assert.match(page.text, /id="frames"/);
+  assert.match(page.text, /id="fps"/);
 
   const model = await request(app).get('/player-model.js').expect(200);
   assert.match(model.text, /framePosition/);

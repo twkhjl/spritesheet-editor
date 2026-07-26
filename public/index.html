@@ -51,6 +51,15 @@
             <input id="fps" type="number" min="1" max="60" step="1" value="12" inputmode="numeric">
           </label>
         </div>
+        <label class="order-control" for="order-mode">
+          <span>快速排序</span>
+          <select id="order-mode">
+            <option value="row">左到右，再上到下</option>
+            <option value="column">上到下，再左到右</option>
+            <option value="reverse">反轉目前順序</option>
+            <option value="custom">自訂順序</option>
+          </select>
+        </label>
         <label class="switch-row">
           <span>
             <strong>循環播放</strong>
@@ -77,8 +86,8 @@
           <h2 id="player-heading">逐格燈箱</h2>
         </div>
         <div class="frame-readout" aria-live="polite">
-          <span>FRAME</span>
-          <strong id="frame-counter">00 / 25</strong>
+          <span id="current-cell">格子 1</span>
+          <strong id="frame-counter">01 / 25</strong>
         </div>
       </header>
 
@@ -104,6 +113,7 @@
             <div class="sheet-wrap">
               <img id="sheet-preview" alt="完整 spritesheet">
               <span class="grid-overlay" id="grid-overlay" aria-hidden="true"></span>
+              <div class="cell-picker" id="cell-picker" aria-label="選擇播放格子"></div>
               <span class="frame-cursor" id="frame-cursor" aria-hidden="true"></span>
             </div>
           </div>
@@ -114,6 +124,21 @@
         <button class="active" type="button" data-view="animation">動畫</button>
         <button type="button" data-view="sheet">完整圖表</button>
       </div>
+
+      <section class="sequence-editor" aria-labelledby="sequence-heading">
+        <div class="sequence-heading">
+          <div>
+            <p class="eyebrow">PLAYLIST</p>
+            <h3 id="sequence-heading">播放順序</h3>
+          </div>
+          <div class="sequence-actions">
+            <button id="use-all-frames" type="button">使用全部格子</button>
+            <button id="clear-sequence" type="button">清空</button>
+          </div>
+        </div>
+        <ol class="sequence-list" id="sequence-list" aria-label="目前播放清單"></ol>
+        <p class="sequence-help">切換至「完整圖表」並點擊格子，即可依點擊順序追加；同一格可重複加入。</p>
+      </section>
 
       <footer class="transport">
         <div class="transport-buttons">

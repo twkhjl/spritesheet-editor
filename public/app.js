@@ -1,7 +1,11 @@
 import {
+  appendFrame,
+  columnMajorSequence,
   DEFAULT_SETTINGS,
   frameCount,
   framePosition,
+  removeSequenceItem,
+  rowMajorSequence,
   validateSettings,
 } from './player-model.js';
 
@@ -12,6 +16,7 @@ const elements = {
   columns: document.querySelector('#columns'),
   rows: document.querySelector('#rows'),
   fps: document.querySelector('#fps'),
+  orderMode: document.querySelector('#order-mode'),
   loop: document.querySelector('#loop'),
   capacity: document.querySelector('#capacity'),
   fileMeta: document.querySelector('#file-meta'),
@@ -23,8 +28,13 @@ const elements = {
   sheetViewport: document.querySelector('#sheet-viewport'),
   sheetPreview: document.querySelector('#sheet-preview'),
   gridOverlay: document.querySelector('#grid-overlay'),
+  cellPicker: document.querySelector('#cell-picker'),
   frameCursor: document.querySelector('#frame-cursor'),
+  currentCell: document.querySelector('#current-cell'),
   frameCounter: document.querySelector('#frame-counter'),
+  sequenceList: document.querySelector('#sequence-list'),
+  clearSequence: document.querySelector('#clear-sequence'),
+  useAllFrames: document.querySelector('#use-all-frames'),
   previousButton: document.querySelector('#previous-button'),
   playButton: document.querySelector('#play-button'),
   playIcon: document.querySelector('.play-icon'),
@@ -35,15 +45,16 @@ const elements = {
   viewButtons: document.querySelectorAll('[data-view]'),
 };
 
+const initialSequence = rowMajorSequence(DEFAULT_SETTINGS.columns, DEFAULT_SETTINGS.rows);
 const state = {
   url: '',
   width: 0,
   height: 0,
-  frame: 0,
+  sequence: initialSequence,
+  sequencePosition: 0,
   playing: false,
   timer: null,
   ...DEFAULT_SETTINGS,
-  frames: frameCount(DEFAULT_SETTINGS.columns, DEFAULT_SETTINGS.rows),
 };
 
 function readSettings() {
@@ -68,12 +79,20 @@ function stopPlayback() {
   elements.playButton.setAttribute('aria-pressed', 'false');
 }
 
+function syncControlState() {
+  const disabled = !state.url || state.sequence.length === 0;
+  elements.playButton.disabled = disabled;
+  elements.previousButton.disabled = disabled;
+  elements.nextButton.disabled = disabled;
+  elements.clearSequence.disabled = state.sequence.length === 0;
+}
+
 function formatNumber(value) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 function updateMetadata() {
-  const capacity = state.columns * state.rows;
+  const capacity = frameCount(state.columns, state.rows);
   elements.capacity.textContent = `${capacity} 格容量`;
   if (!state.width || !state.height) {
     elements.fileMeta.innerHTML = '<span>圖片尺寸 <b>—</b></span><span>單格尺寸 <b>—</b></span>';
@@ -92,14 +111,83 @@ function updateMetadata() {
   }
 }
 
+function sequenceForMode(mode) {
+  if (mode === 'column') return columnMajorSequence(state.columns, state.rows);
+  return rowMajorSequence(state.columns, state.rows);
+}
+
+function frameCounts() {
+  const counts = new Map();
+  for (const frameIndex of state.sequence) {
+    counts.set(frameIndex, (counts.get(frameIndex) || 0) + 1);
+  }
+  return counts;
+}
+
+function renderCellPicker() {
+  const counts = frameCounts();
+  elements.cellPicker.replaceChildren();
+  elements.cellPicker.style.gridTemplateColumns = `repeat(${state.columns}, 1fr)`;
+  elements.cellPicker.style.gridTemplateRows = `repeat(${state.rows}, 1fr)`;
+
+  for (let frameIndex = 0; frameIndex < frameCount(state.columns, state.rows); frameIndex += 1) {
+    const button = document.createElement('button');
+    const count = counts.get(frameIndex) || 0;
+    button.type = 'button';
+    button.dataset.frameIndex = String(frameIndex);
+    button.setAttribute('aria-label', `將格子 ${frameIndex + 1} 加到播放清單`);
+    button.innerHTML = `<span>${frameIndex + 1}</span>${count ? `<b>${count}</b>` : ''}`;
+    elements.cellPicker.append(button);
+  }
+}
+
+function renderSequence() {
+  elements.sequenceList.replaceChildren();
+
+  if (state.sequence.length === 0) {
+    const empty = document.createElement('li');
+    empty.className = 'sequence-empty';
+    empty.textContent = '請先從完整圖表選取要播放的格子';
+    elements.sequenceList.append(empty);
+  } else {
+    state.sequence.forEach((frameIndex, sequenceIndex) => {
+      const item = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.sequenceIndex = String(sequenceIndex);
+      button.setAttribute('aria-label', `移除序列第 ${sequenceIndex + 1} 項，格子 ${frameIndex + 1}`);
+      button.textContent = String(frameIndex + 1);
+      if (sequenceIndex === state.sequencePosition) button.classList.add('active');
+      item.append(button);
+      elements.sequenceList.append(item);
+    });
+  }
+
+  renderCellPicker();
+  syncControlState();
+}
+
 function renderFrame() {
-  const position = framePosition(state.frame, state.columns, state.rows);
+  const sequenceLength = state.sequence.length;
+  if (sequenceLength === 0) {
+    elements.currentCell.textContent = '尚未選格';
+    elements.frameCounter.textContent = '00 / 00';
+    elements.frameCursor.hidden = true;
+    renderSequence();
+    return;
+  }
+
+  state.sequencePosition = Math.min(state.sequencePosition, sequenceLength - 1);
+  const sourceFrame = state.sequence[state.sequencePosition];
+  const position = framePosition(sourceFrame, state.columns, state.rows);
   elements.animationPreview.style.backgroundImage = `url("${state.url}")`;
   elements.animationPreview.style.backgroundSize = `${state.columns * 100}% ${state.rows * 100}%`;
   elements.animationPreview.style.backgroundPosition = `${position.xPercent}% ${position.yPercent}%`;
-  elements.frameCounter.textContent = `${String(state.frame + 1).padStart(2, '0')} / ${String(state.frames).padStart(2, '0')}`;
+  elements.currentCell.textContent = `格子 ${sourceFrame + 1}`;
+  elements.frameCounter.textContent = `${String(state.sequencePosition + 1).padStart(2, '0')} / ${String(sequenceLength).padStart(2, '0')}`;
 
   elements.gridOverlay.style.backgroundSize = `${100 / state.columns}% ${100 / state.rows}%`;
+  elements.frameCursor.hidden = false;
   elements.frameCursor.style.width = `${100 / state.columns}%`;
   elements.frameCursor.style.height = `${100 / state.rows}%`;
   elements.frameCursor.style.left = `${position.column * 100 / state.columns}%`;
@@ -108,9 +196,17 @@ function renderFrame() {
   if (state.width && state.height) {
     elements.animationViewport.style.aspectRatio = `${state.width / state.columns} / ${state.height / state.rows}`;
   }
+  renderSequence();
 }
 
-function applySettings() {
+function rebuildSequence(mode = elements.orderMode.value) {
+  const safeMode = mode === 'column' ? 'column' : 'row';
+  state.sequence = sequenceForMode(safeMode);
+  state.sequencePosition = 0;
+  elements.orderMode.value = safeMode;
+}
+
+function applySettings({ rebuild = false } = {}) {
   const settings = readSettings();
   const result = validateSettings(settings);
   if (!result.valid) {
@@ -119,10 +215,13 @@ function applySettings() {
     return false;
   }
 
-  Object.assign(state, settings, {
-    frames: frameCount(settings.columns, settings.rows),
-  });
-  state.frame = Math.min(state.frame, state.frames - 1);
+  const gridChanged = settings.columns !== state.columns || settings.rows !== state.rows;
+  Object.assign(state, settings);
+  if (rebuild || gridChanged) {
+    stopPlayback();
+    rebuildSequence(elements.orderMode.value);
+  }
+
   updateMetadata();
   renderFrame();
   if (!state.url) {
@@ -134,19 +233,22 @@ function applySettings() {
 }
 
 function advanceFrame(direction = 1) {
-  const next = state.frame + direction;
-  if (next >= state.frames) {
+  const length = state.sequence.length;
+  if (length === 0) return false;
+
+  const next = state.sequencePosition + direction;
+  if (next >= length) {
     if (!elements.loop.checked) {
-      state.frame = state.frames - 1;
+      state.sequencePosition = length - 1;
       stopPlayback();
       renderFrame();
       return false;
     }
-    state.frame = 0;
+    state.sequencePosition = 0;
   } else if (next < 0) {
-    state.frame = state.frames - 1;
+    state.sequencePosition = length - 1;
   } else {
-    state.frame = next;
+    state.sequencePosition = next;
   }
   renderFrame();
   return true;
@@ -161,7 +263,7 @@ function scheduleNextFrame() {
 }
 
 function togglePlayback() {
-  if (!state.url || !applySettings()) return;
+  if (!state.url || state.sequence.length === 0 || !applySettings()) return;
   state.playing = !state.playing;
   elements.playIcon.textContent = state.playing ? 'Ⅱ' : '▶';
   elements.playLabel.textContent = state.playing ? '暫停' : '播放';
@@ -185,16 +287,13 @@ function showImage(file) {
     state.url = nextUrl;
     state.width = image.naturalWidth;
     state.height = image.naturalHeight;
-    state.frame = 0;
+    state.sequencePosition = 0;
 
     elements.fileName.textContent = file.name;
     elements.dropzone.classList.add('has-file');
     elements.sheetPreview.src = state.url;
     elements.emptyState.hidden = true;
     elements.previewArea.hidden = false;
-    elements.playButton.disabled = false;
-    elements.previousButton.disabled = false;
-    elements.nextButton.disabled = false;
     setMessage('圖片已載入，可以開始播放。', 'success');
     applySettings();
   };
@@ -229,15 +328,66 @@ elements.dropzone.addEventListener('drop', (event) => {
   if (file) showImage(file);
 });
 
-for (const input of [elements.columns, elements.rows, elements.fps]) {
-  input.addEventListener('input', () => {
-    const wasPlaying = state.playing;
-    if (applySettings() && wasPlaying) {
-      state.playing = true;
-      scheduleNextFrame();
-    }
-  });
+for (const input of [elements.columns, elements.rows]) {
+  input.addEventListener('input', () => applySettings({ rebuild: true }));
 }
+elements.fps.addEventListener('input', () => {
+  const wasPlaying = state.playing;
+  if (applySettings() && wasPlaying) {
+    state.playing = true;
+    scheduleNextFrame();
+  }
+});
+
+elements.orderMode.addEventListener('change', () => {
+  stopPlayback();
+  if (elements.orderMode.value === 'reverse') {
+    state.sequence = [...state.sequence].reverse();
+    state.sequencePosition = 0;
+    elements.orderMode.value = 'custom';
+  } else if (elements.orderMode.value !== 'custom') {
+    rebuildSequence(elements.orderMode.value);
+  }
+  renderFrame();
+});
+
+elements.cellPicker.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-frame-index]');
+  if (!button) return;
+  stopPlayback();
+  state.sequence = appendFrame(state.sequence, Number(button.dataset.frameIndex));
+  if (state.sequence.length === 1) state.sequencePosition = 0;
+  elements.orderMode.value = 'custom';
+  setMessage(`格子 ${Number(button.dataset.frameIndex) + 1} 已加入播放清單。`, 'success');
+  renderFrame();
+});
+
+elements.sequenceList.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-sequence-index]');
+  if (!button) return;
+  stopPlayback();
+  state.sequence = removeSequenceItem(state.sequence, Number(button.dataset.sequenceIndex));
+  state.sequencePosition = Math.min(state.sequencePosition, Math.max(0, state.sequence.length - 1));
+  elements.orderMode.value = 'custom';
+  if (state.sequence.length === 0) setMessage('請先選取要播放的格子。', 'warning');
+  renderFrame();
+});
+
+elements.clearSequence.addEventListener('click', () => {
+  stopPlayback();
+  state.sequence = [];
+  state.sequencePosition = 0;
+  elements.orderMode.value = 'custom';
+  setMessage('請先選取要播放的格子。', 'warning');
+  renderFrame();
+});
+
+elements.useAllFrames.addEventListener('click', () => {
+  stopPlayback();
+  rebuildSequence(elements.orderMode.value === 'column' ? 'column' : 'row');
+  setMessage('已加入全部格子。', 'success');
+  renderFrame();
+});
 
 elements.playButton.addEventListener('click', togglePlayback);
 elements.previousButton.addEventListener('click', () => {
@@ -265,7 +415,7 @@ for (const button of elements.viewButtons) {
 }
 
 document.addEventListener('keydown', (event) => {
-  if (!state.url || ['INPUT', 'BUTTON'].includes(event.target.tagName)) return;
+  if (!state.url || ['INPUT', 'BUTTON', 'SELECT'].includes(event.target.tagName)) return;
   if (event.code === 'Space') {
     event.preventDefault();
     togglePlayback();

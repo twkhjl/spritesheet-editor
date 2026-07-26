@@ -1,5 +1,6 @@
 import {
   DEFAULT_SETTINGS,
+  frameCount,
   framePosition,
   validateSettings,
 } from './player-model.js';
@@ -10,7 +11,6 @@ const elements = {
   fileName: document.querySelector('#file-name'),
   columns: document.querySelector('#columns'),
   rows: document.querySelector('#rows'),
-  frames: document.querySelector('#frames'),
   fps: document.querySelector('#fps'),
   loop: document.querySelector('#loop'),
   capacity: document.querySelector('#capacity'),
@@ -43,13 +43,13 @@ const state = {
   playing: false,
   timer: null,
   ...DEFAULT_SETTINGS,
+  frames: frameCount(DEFAULT_SETTINGS.columns, DEFAULT_SETTINGS.rows),
 };
 
 function readSettings() {
   return {
     columns: Number(elements.columns.value),
     rows: Number(elements.rows.value),
-    frames: Number(elements.frames.value),
     fps: Number(elements.fps.value),
   };
 }
@@ -119,7 +119,9 @@ function applySettings() {
     return false;
   }
 
-  Object.assign(state, settings);
+  Object.assign(state, settings, {
+    frames: frameCount(settings.columns, settings.rows),
+  });
   state.frame = Math.min(state.frame, state.frames - 1);
   updateMetadata();
   renderFrame();
@@ -227,7 +229,7 @@ elements.dropzone.addEventListener('drop', (event) => {
   if (file) showImage(file);
 });
 
-for (const input of [elements.columns, elements.rows, elements.frames, elements.fps]) {
+for (const input of [elements.columns, elements.rows, elements.fps]) {
   input.addEventListener('input', () => {
     const wasPlaying = state.playing;
     if (applySettings() && wasPlaying) {

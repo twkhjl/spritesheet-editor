@@ -11,7 +11,7 @@ test('serves the player shell and model module', async () => {
   assert.match(page.text, /id="play-button"/);
   assert.match(page.text, /id="columns"/);
   assert.match(page.text, /id="rows"/);
-  assert.match(page.text, /id="frames"/);
+  assert.doesNotMatch(page.text, /id="frames"/);
   assert.match(page.text, /id="fps"/);
 
   const model = await request(app).get('/player-model.js').expect(200);

@@ -1,16 +1,18 @@
 export const DEFAULT_SETTINGS = Object.freeze({
   columns: 5,
   rows: 5,
-  frames: 25,
   fps: 12,
 });
+
+export function frameCount(columns, rows) {
+  return columns * rows;
+}
 
 export function validateSettings(settings) {
   const errors = [];
   const labels = {
     columns: '欄數',
     rows: '列數',
-    frames: '總幀數',
     fps: 'FPS',
   };
 
@@ -18,15 +20,6 @@ export function validateSettings(settings) {
     if (!Number.isInteger(settings[key]) || settings[key] < 1) {
       errors.push(`${labels[key]}必須是正整數。`);
     }
-  }
-
-  if (
-    Number.isInteger(settings.frames)
-    && Number.isInteger(settings.columns)
-    && Number.isInteger(settings.rows)
-    && settings.frames > settings.columns * settings.rows
-  ) {
-    errors.push('總幀數不可超過欄數 × 列數。');
   }
 
   return { valid: errors.length === 0, errors };

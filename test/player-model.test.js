@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_SETTINGS,
+  frameCount,
   framePosition,
   frameSource,
   validateSettings,
@@ -11,7 +12,6 @@ test('provides valid 5 by 5 playback defaults', () => {
   assert.deepEqual(DEFAULT_SETTINGS, {
     columns: 5,
     rows: 5,
-    frames: 25,
     fps: 12,
   });
   assert.deepEqual(validateSettings(DEFAULT_SETTINGS), {
@@ -20,23 +20,15 @@ test('provides valid 5 by 5 playback defaults', () => {
   });
 });
 
-test('rejects frame counts larger than the grid capacity', () => {
-  const result = validateSettings({
-    columns: 2,
-    rows: 2,
-    frames: 5,
-    fps: 12,
-  });
-
-  assert.equal(result.valid, false);
-  assert.match(result.errors.join(' '), /總幀數/);
+test('derives total frames from grid dimensions', () => {
+  assert.equal(frameCount(5, 5), 25);
+  assert.equal(frameCount(4, 3), 12);
 });
 
 test('rejects non-positive and fractional settings', () => {
   const result = validateSettings({
     columns: 0,
     rows: 2.5,
-    frames: 1,
     fps: -1,
   });
 

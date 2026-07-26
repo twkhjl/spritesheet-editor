@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="將單張側身角色圖轉換成 5×5 走路 spritesheet。">
+  <title>Spritesheet Player</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Walk Cycle Studio 首頁">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>WALK CYCLE<br><b>STUDIO</b></span>
+    </a>
+    <div class="format-note"><span>OUTPUT</span> 25 FRAMES · 512 PX · PNG</div>
+  </header>
+
+  <main class="workspace">
+    <section class="control-panel" aria-labelledby="setup-heading">
+      <div class="section-heading">
+        <span class="step">01</span>
+        <div>
+          <p class="eyebrow">SOURCE FRAME</p>
+          <h1 id="setup-heading">讓角色<br>開始行走。</h1>
+        </div>
+      </div>
+      <p class="intro">上傳完整側身角色圖。系統會優先使用 NVIDIA 生成走路影片；端點不可用時，自動製作本機機械式循環。</p>
+
+      <form id="job-form" novalidate>
+        <label class="dropzone" id="dropzone" for="image-input">
+          <input id="image-input" name="image" type="file" accept="image/png,image/jpeg,image/webp" required>
+          <img id="source-preview" alt="">
+          <span class="drop-icon" aria-hidden="true">↗</span>
+          <span class="drop-title">放入角色圖</span>
+          <span class="drop-help">PNG / JPEG / WebP，最大 10 MB</span>
+          <span class="file-name" id="file-name"></span>
+        </label>
+
+        <div class="field-row">
+          <label for="seed">
+            <span>SEED</span>
+            <input id="seed" name="seed" type="number" min="0" max="2147483647" value="0" inputmode="numeric">
+          </label>
+          <div class="input-rule">
+            <span>最佳輸入</span>
+            <strong>透明背景 · 全身 · 側面</strong>
+          </div>
+        </div>
+
+        <button class="generate-button" id="generate-button" type="submit">
+          <span>生成 25 幀走路循環</span>
+          <span aria-hidden="true">→</span>
+        </button>
+      </form>
+
+      <div class="message" id="message" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="stage-panel" aria-labelledby="stage-heading">
+      <div class="stage-header">
+        <div>
+          <p class="eyebrow">ANIMATION BENCH</p>
+          <h2 id="stage-heading">逐格預覽</h2>
+        </div>
+        <div class="provider-chip" id="provider-chip" hidden></div>
+      </div>
+
+      <div class="stage" id="stage">
+        <div class="empty-state" id="empty-state">
+          <div class="film-grid" id="film-grid" aria-hidden="true"></div>
+          <p>25 個影格會在這裡依序成形</p>
+          <span>左 → 右 · 上 → 下</span>
+        </div>
+
+        <div class="result-stage" id="result-stage" hidden>
+          <div class="animation-frame">
+            <div id="animation-preview" class="animation-preview" role="img" aria-label="走路循環動畫預覽"></div>
+            <span class="baseline" aria-hidden="true"></span>
+          </div>
+          <div class="view-tabs" role="group" aria-label="預覽模式">
+            <button class="active" type="button" data-view="animation">循環播放</button>
+            <button type="button" data-view="sheet">5×5 圖表</button>
+          </div>
+          <div class="sheet-frame" id="sheet-frame" hidden>
+            <img id="sheet-preview" alt="5×5 走路 spritesheet">
+            <span class="grid-overlay" aria-hidden="true"></span>
+          </div>
+        </div>
+      </div>
+
+      <footer class="result-footer">
+        <div class="progress-copy">
+          <span id="stage-copy">WAITING FOR SOURCE</span>
+          <strong id="progress-copy">0%</strong>
+        </div>
+        <div class="progress-track"><span id="progress-bar"></span></div>
+        <a class="download-button" id="download-button" hidden download="walk-cycle-5x5.png">下載 PNG</a>
+      </footer>
+    </section>
+  </main>
+
+  <template id="film-cell-template"><span></span></template>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

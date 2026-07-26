@@ -1,10 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  appendFrame,
+  columnMajorSequence,
   DEFAULT_SETTINGS,
   frameCount,
   framePosition,
   frameSource,
+  removeSequenceItem,
+  rowMajorSequence,
   validateSettings,
 } from '../public/player-model.js';
 
@@ -23,6 +27,18 @@ test('provides valid 5 by 5 playback defaults', () => {
 test('derives total frames from grid dimensions', () => {
   assert.equal(frameCount(5, 5), 25);
   assert.equal(frameCount(4, 3), 12);
+});
+
+test('builds row-major and column-major sequences', () => {
+  assert.deepEqual(rowMajorSequence(3, 2), [0, 1, 2, 3, 4, 5]);
+  assert.deepEqual(columnMajorSequence(3, 2), [0, 3, 1, 4, 2, 5]);
+});
+
+test('appends duplicate frames and removes one sequence item', () => {
+  const repeated = appendFrame([0, 1, 2], 0);
+  assert.deepEqual(repeated, [0, 1, 2, 0]);
+  assert.deepEqual(removeSequenceItem(repeated, 1), [0, 2, 0]);
+  assert.deepEqual(repeated, [0, 1, 2, 0]);
 });
 
 test('rejects non-positive and fractional settings', () => {

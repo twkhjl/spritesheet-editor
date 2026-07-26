@@ -8,6 +8,26 @@ export function frameCount(columns, rows) {
   return columns * rows;
 }
 
+export function rowMajorSequence(columns, rows) {
+  return Array.from({ length: frameCount(columns, rows) }, (_, index) => index);
+}
+
+export function columnMajorSequence(columns, rows) {
+  return Array.from({ length: frameCount(columns, rows) }, (_, index) => {
+    const column = Math.floor(index / rows);
+    const row = index % rows;
+    return row * columns + column;
+  });
+}
+
+export function appendFrame(sequence, frameIndex) {
+  return [...sequence, frameIndex];
+}
+
+export function removeSequenceItem(sequence, sequenceIndex) {
+  return sequence.filter((_, index) => index !== sequenceIndex);
+}
+
 export function validateSettings(settings) {
   const errors = [];
   const labels = {

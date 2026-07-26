@@ -25,4 +25,5 @@ test('does not expose the old generation API', async () => {
 test('updates settings while number fields are being edited', async () => {
   const script = await request(createApp()).get('/app.js').expect(200);
   assert.match(script.text, /input\.addEventListener\('input'/);
+  assert.match(script.text, /setMessage\('載入圖片後即可播放。'\)/);
 });

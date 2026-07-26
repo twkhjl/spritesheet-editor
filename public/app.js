@@ -123,7 +123,9 @@ function applySettings() {
   state.frame = Math.min(state.frame, state.frames - 1);
   updateMetadata();
   renderFrame();
-  if (state.url && !elements.message.classList.contains('warning')) {
+  if (!state.url) {
+    setMessage('載入圖片後即可播放。');
+  } else if (!elements.message.classList.contains('warning')) {
     setMessage('設定已更新。');
   }
   return true;

@@ -1,83 +1,53 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  appendFrame,
-  columnMajorSequence,
-  DEFAULT_SETTINGS,
-  frameCount,
-  framePosition,
-  frameSource,
-  removeSequenceItem,
-  rowMajorSequence,
-  validateSettings,
+  PROJECT_FORMAT,
+  PROJECT_VERSION,
+  applyFrameTransformToAll,
+  createFrameTransforms,
+  moveFrameTransform,
+  resizeFrameTransforms,
+  validateProject,
 } from '../public/player-model.js';
 
-test('provides valid 5 by 5 playback defaults', () => {
-  assert.deepEqual(DEFAULT_SETTINGS, {
-    columns: 5,
-    rows: 5,
-    fps: 12,
-  });
-  assert.deepEqual(validateSettings(DEFAULT_SETTINGS), {
-    valid: true,
-    errors: [],
-  });
+test('creates independent frame transforms', () => {
+  const frames = createFrameTransforms(4, 3);
+  assert.equal(frames.length, 12);
+  assert.deepEqual(frames[0], { offsetX: 0, offsetY: 0 });
+  assert.notEqual(frames[0], frames[1]);
 });
 
-test('derives total frames from grid dimensions', () => {
-  assert.equal(frameCount(5, 5), 25);
-  assert.equal(frameCount(4, 3), 12);
+test('moves one frame immutably', () => {
+  const original = createFrameTransforms(2, 2);
+  const moved = moveFrameTransform(original, 1, 3, -2);
+  assert.deepEqual(moved[1], { offsetX: 3, offsetY: -2 });
+  assert.deepEqual(original[1], { offsetX: 0, offsetY: 0 });
 });
 
-test('builds row-major and column-major sequences', () => {
-  assert.deepEqual(rowMajorSequence(3, 2), [0, 1, 2, 3, 4, 5]);
-  assert.deepEqual(columnMajorSequence(3, 2), [0, 3, 1, 4, 2, 5]);
+test('resizes and preserves transforms', () => {
+  const frames = moveFrameTransform(createFrameTransforms(2, 2), 2, 4, 5);
+  const bigger = resizeFrameTransforms(frames, 6);
+  assert.deepEqual(bigger[2], { offsetX: 4, offsetY: 5 });
+  assert.deepEqual(bigger[5], { offsetX: 0, offsetY: 0 });
+  assert.equal(resizeFrameTransforms(bigger, 3).length, 3);
 });
 
-test('appends duplicate frames and removes one sequence item', () => {
-  const repeated = appendFrame([0, 1, 2], 0);
-  assert.deepEqual(repeated, [0, 1, 2, 0]);
-  assert.deepEqual(removeSequenceItem(repeated, 1), [0, 2, 0]);
-  assert.deepEqual(repeated, [0, 1, 2, 0]);
+test('apply all does not share object references', () => {
+  const frames = moveFrameTransform(createFrameTransforms(2, 1), 0, 4, -3);
+  const all = applyFrameTransformToAll(frames, 0);
+  assert.deepEqual(all[1], { offsetX: 4, offsetY: -3 });
+  assert.notEqual(all[0], all[1]);
 });
 
-test('rejects non-positive and fractional settings', () => {
-  const result = validateSettings({
-    columns: 0,
-    rows: 2.5,
-    fps: -1,
-  });
-
-  assert.equal(result.valid, false);
-  assert.equal(result.errors.length, 3);
-});
-
-test('maps frames from left to right and top to bottom', () => {
-  assert.deepEqual(framePosition(0, 5, 5), {
-    column: 0,
-    row: 0,
-    xPercent: 0,
-    yPercent: 0,
-  });
-  assert.deepEqual(framePosition(5, 5, 5), {
-    column: 0,
-    row: 1,
-    xPercent: 0,
-    yPercent: 25,
-  });
-  assert.deepEqual(framePosition(24, 5, 5), {
-    column: 4,
-    row: 4,
-    xPercent: 100,
-    yPercent: 100,
-  });
-});
-
-test('calculates source pixels for a frame', () => {
-  assert.deepEqual(frameSource(24, 2560, 2560, 5, 5), {
-    x: 2048,
-    y: 2048,
-    width: 512,
-    height: 512,
-  });
+test('validates project', () => {
+  const project = {
+    format: PROJECT_FORMAT,
+    version: PROJECT_VERSION,
+    grid: { columns: 2, rows: 1 },
+    playback: { sequence: [0, 1] },
+    frames: [{ offsetX: 0, offsetY: 0 }, { offsetX: 1, offsetY: -1 }],
+  };
+  assert.equal(validateProject(project).valid, true);
+  project.playback.sequence = [3];
+  assert.equal(validateProject(project).valid, false);
 });

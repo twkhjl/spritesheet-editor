@@ -6,6 +6,13 @@
 <label class="drop">選擇或拖放 spritesheet<input id="file" type="file" accept="image/png,image/jpeg,image/webp"><small id="filename">尚未選擇</small></label>
 <div class="grid3"><label>欄數<input id="columns" type="number" min="1" value="5"></label><label>列數<input id="rows" type="number" min="1" value="5"></label><label>FPS<input id="fps" type="number" min="1" max="60" value="12"></label></div>
 <label class="check"><input id="loop" type="checkbox" checked>循環播放</label>
+<section><h2>背景處理</h2>
+<label class="check"><input id="removeBackground" type="checkbox">移除指定背景顏色</label>
+<div class="grid2"><label>背景顏色<input id="backgroundColor" type="color" value="#ffffff"></label><label>容許色差 <output id="colorToleranceValue">24</output><input id="colorTolerance" type="range" min="0" max="255" step="1" value="24"></label></div>
+<label>邊緣柔化 <output id="colorFeatherValue">0</output><input id="colorFeather" type="range" min="0" max="64" step="1" value="0"></label>
+<div class="actions"><button id="applyBackgroundRemoval" type="button">套用去背</button></div>
+<p id="backgroundRemovalStatus">目前保留原始背景。</p>
+</section>
 <section><h2>影格位置</h2><div class="grid2"><label>X 位移<input id="offsetX" type="number" step="1" value="0"></label><label>Y 位移<input id="offsetY" type="number" step="1" value="0"></label></div>
 <div class="nudge"><button data-move="0,-1">↑</button><button data-move="-1,0">←</button><button id="reset">重設</button><button data-move="1,0">→</button><button data-move="0,1">↓</button></div>
 <div class="actions"><button id="copyPrev">複製上一格</button><button id="copyNext">複製下一格</button><button id="applyAll">套用至全部</button><button id="undo">Undo</button><button id="redo">Redo</button></div></section>
@@ -18,4 +25,4 @@
 <div class="stage"><div id="empty">等待 spritesheet</div><canvas id="animation" hidden></canvas><canvas id="editor" hidden></canvas><div id="sheetView" hidden><div id="sheetWrap"><img id="sheet"><div id="picker"></div></div></div></div>
 <div class="transport"><button id="prev">←</button><button id="play">▶ 播放</button><button id="next">→</button><label>縮放<input id="zoom" type="range" min="50" max="200" value="100"><output id="zoomOut">100%</output></label></div>
 <section><div class="sequenceHead"><h2>播放順序</h2><span><button id="all">使用全部</button><button id="clear">清空</button></span></div><ol id="sequence"></ol></section>
-</article></main><script type="module" src="/app.js"></script></body></html>
+</article></main><script type="module" src="/app.js"></script><script type="module" src="/background-removal.js"></script></body></html>

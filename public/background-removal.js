@@ -7,6 +7,7 @@ const toleranceInput = document.querySelector('#colorTolerance');
 const featherInput = document.querySelector('#colorFeather');
 const toleranceOutput = document.querySelector('#colorToleranceValue');
 const featherOutput = document.querySelector('#colorFeatherValue');
+const pickColorButton = document.querySelector('#pickBackgroundColor');
 const applyButton = document.querySelector('#applyBackgroundRemoval');
 const status = document.querySelector('#backgroundRemovalStatus');
 
@@ -14,6 +15,7 @@ let originalFile = null;
 let replacingFile = false;
 let processingToken = 0;
 let debounceTimer = null;
+let pickingColor = false;
 
 function setStatus(text, type = '') {
   status.textContent = text;
@@ -114,6 +116,37 @@ function scheduleProcessing() {
   }, 250);
 }
 
+async function pickBackgroundColor() {
+  if (pickingColor) return;
+
+  if (!('EyeDropper' in window)) {
+    setStatus('目前瀏覽器不支援螢幕取色，請使用最新版 Chrome、Edge 或手動選色。', 'warning');
+    return;
+  }
+
+  pickingColor = true;
+  pickColorButton.disabled = true;
+  setStatus('請點擊螢幕上要移除的背景顏色；按 Esc 可取消。');
+
+  try {
+    const eyeDropper = new window.EyeDropper();
+    const result = await eyeDropper.open();
+    colorInput.value = result.sRGBHex.toLowerCase();
+    enabledInput.checked = true;
+    setStatus(`已選取背景色 ${colorInput.value}，正在套用去背……`, 'success');
+    await processOriginalFile();
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      setStatus('已取消螢幕取色。');
+    } else {
+      setStatus('螢幕取色失敗，請重新嘗試或手動選色。', 'error');
+    }
+  } finally {
+    pickingColor = false;
+    pickColorButton.disabled = false;
+  }
+}
+
 fileInput.addEventListener('change', () => {
   if (replacingFile) return;
   const file = fileInput.files?.[0];
@@ -126,6 +159,7 @@ fileInput.addEventListener('change', () => {
 });
 
 enabledInput.addEventListener('change', processOriginalFile);
+pickColorButton.addEventListener('click', pickBackgroundColor);
 applyButton.addEventListener('click', processOriginalFile);
 
 for (const input of [colorInput, toleranceInput, featherInput]) {

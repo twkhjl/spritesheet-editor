@@ -1,163 +1,21 @@
-<!doctype html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="在瀏覽器中載入並播放現成的 spritesheet，不上傳任何圖片。">
-  <title>Spritesheet Player</title>
-  <link rel="stylesheet" href="/styles.css">
-</head>
-<body>
-  <header class="topbar">
-    <a class="brand" href="/" aria-label="Spritesheet Player 首頁">
-      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span>SPRITESHEET<br><b>PLAYER</b></span>
-    </a>
-    <div class="privacy-note"><span class="status-dot"></span> 圖片只留在這個瀏覽器</div>
-  </header>
-
-  <main class="workspace">
-    <aside class="control-panel" aria-labelledby="source-heading">
-      <div class="panel-heading">
-        <p class="eyebrow">SOURCE</p>
-        <h1 id="source-heading">載入圖表，<br><em>讓每格動起來。</em></h1>
-        <p>選擇現成的 spritesheet，再告訴播放器格線怎麼切。圖片不會上傳，也不會被修改。</p>
-      </div>
-
-      <label class="dropzone" id="dropzone" for="spritesheet-input">
-        <input id="spritesheet-input" type="file" accept="image/png,image/jpeg,image/webp">
-        <span class="drop-glyph" aria-hidden="true">＋</span>
-        <strong>選擇或拖放 spritesheet</strong>
-        <span>PNG、JPEG、WebP</span>
-        <span class="file-name" id="file-name">尚未選擇檔案</span>
-      </label>
-
-      <section class="settings" aria-labelledby="grid-heading">
-        <div class="settings-heading">
-          <h2 id="grid-heading">格線設定</h2>
-          <span id="capacity">25 格容量</span>
-        </div>
-        <div class="number-grid">
-          <label>
-            <span>欄數</span>
-            <input id="columns" type="number" min="1" step="1" value="5" inputmode="numeric">
-          </label>
-          <label>
-            <span>列數</span>
-            <input id="rows" type="number" min="1" step="1" value="5" inputmode="numeric">
-          </label>
-          <label>
-            <span>FPS</span>
-            <input id="fps" type="number" min="1" max="60" step="1" value="12" inputmode="numeric">
-          </label>
-        </div>
-        <label class="order-control" for="order-mode">
-          <span>快速排序</span>
-          <select id="order-mode">
-            <option value="row">左到右，再上到下</option>
-            <option value="column">上到下，再左到右</option>
-            <option value="reverse">反轉目前順序</option>
-            <option value="custom">自訂順序</option>
-          </select>
-        </label>
-        <label class="switch-row">
-          <span>
-            <strong>循環播放</strong>
-            <small>播完最後一格後回到第一格</small>
-          </span>
-          <input id="loop" type="checkbox" checked>
-          <i aria-hidden="true"></i>
-        </label>
-      </section>
-
-      <div class="file-meta" id="file-meta">
-        <span>圖片尺寸 <b>—</b></span>
-        <span>單格尺寸 <b>—</b></span>
-      </div>
-      <div class="message" id="message" role="status" aria-live="polite">
-        載入圖片後即可播放。
-      </div>
-    </aside>
-
-    <section class="player-panel" aria-labelledby="player-heading">
-      <header class="player-header">
-        <div>
-          <p class="eyebrow">FRAME VIEWER</p>
-          <h2 id="player-heading">逐格燈箱</h2>
-        </div>
-        <div class="frame-readout" aria-live="polite">
-          <span id="current-cell">格子 1</span>
-          <strong id="frame-counter">01 / 25</strong>
-        </div>
-      </header>
-
-      <div class="stage" id="stage">
-        <div class="empty-state" id="empty-state">
-          <div class="empty-grid" aria-hidden="true">
-            <i></i><i></i><i></i><i></i><i></i>
-            <i></i><i></i><i></i><i></i><i></i>
-            <i></i><i></i><i></i><i></i><i></i>
-            <i></i><i></i><i></i><i></i><i></i>
-            <i></i><i></i><i></i><i></i><i></i>
-          </div>
-          <strong>等待 spritesheet</strong>
-          <span>影格依左至右、由上而下讀取</span>
-        </div>
-
-        <div class="preview-area" id="preview-area" hidden>
-          <div class="checkerboard animation-viewport" id="animation-viewport">
-            <div id="animation-preview" class="animation-preview" role="img" aria-label="Spritesheet 動畫預覽"></div>
-          </div>
-
-          <div class="sheet-viewport" id="sheet-viewport" hidden>
-            <div class="sheet-wrap">
-              <img id="sheet-preview" alt="完整 spritesheet">
-              <span class="grid-overlay" id="grid-overlay" aria-hidden="true"></span>
-              <div class="cell-picker" id="cell-picker" aria-label="選擇播放格子"></div>
-              <span class="frame-cursor" id="frame-cursor" aria-hidden="true"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="view-switcher" role="group" aria-label="預覽模式">
-        <button class="active" type="button" data-view="animation">動畫</button>
-        <button type="button" data-view="sheet">完整圖表</button>
-      </div>
-
-      <section class="sequence-editor" aria-labelledby="sequence-heading">
-        <div class="sequence-heading">
-          <div>
-            <p class="eyebrow">PLAYLIST</p>
-            <h3 id="sequence-heading">播放順序</h3>
-          </div>
-          <div class="sequence-actions">
-            <button id="use-all-frames" type="button">使用全部格子</button>
-            <button id="clear-sequence" type="button">清空</button>
-          </div>
-        </div>
-        <ol class="sequence-list" id="sequence-list" aria-label="目前播放清單"></ol>
-        <p class="sequence-help">切換至「完整圖表」並點擊格子，即可依點擊順序追加；同一格可重複加入。</p>
-      </section>
-
-      <footer class="transport">
-        <div class="transport-buttons">
-          <button id="previous-button" class="icon-button" type="button" aria-label="上一幀" disabled>←</button>
-          <button id="play-button" class="play-button" type="button" disabled>
-            <span class="play-icon" aria-hidden="true">▶</span>
-            <span class="play-label">播放</span>
-          </button>
-          <button id="next-button" class="icon-button" type="button" aria-label="下一幀" disabled>→</button>
-        </div>
-        <label class="zoom-control" for="zoom">
-          <span>預覽縮放</span>
-          <input id="zoom" type="range" min="50" max="200" step="10" value="100">
-          <output id="zoom-value" for="zoom">100%</output>
-        </label>
-      </footer>
-    </section>
-  </main>
-
-  <script type="module" src="/app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Spritesheet Editor</title><link rel="stylesheet" href="/styles.css"></head><body>
+<header><strong>SPRITESHEET <b>EDITOR</b></strong><span>圖片只留在瀏覽器</span></header>
+<main>
+<aside>
+<h1>載入並對齊每一格</h1>
+<label class="drop">選擇或拖放 spritesheet<input id="file" type="file" accept="image/png,image/jpeg,image/webp"><small id="filename">尚未選擇</small></label>
+<div class="grid3"><label>欄數<input id="columns" type="number" min="1" value="5"></label><label>列數<input id="rows" type="number" min="1" value="5"></label><label>FPS<input id="fps" type="number" min="1" max="60" value="12"></label></div>
+<label class="check"><input id="loop" type="checkbox" checked>循環播放</label>
+<section><h2>影格位置</h2><div class="grid2"><label>X 位移<input id="offsetX" type="number" step="1" value="0"></label><label>Y 位移<input id="offsetY" type="number" step="1" value="0"></label></div>
+<div class="nudge"><button data-move="0,-1">↑</button><button data-move="-1,0">←</button><button id="reset">重設</button><button data-move="1,0">→</button><button data-move="0,1">↓</button></div>
+<div class="actions"><button id="copyPrev">複製上一格</button><button id="copyNext">複製下一格</button><button id="applyAll">套用至全部</button><button id="undo">Undo</button><button id="redo">Redo</button></div></section>
+<section><h2>匯出</h2><div class="actions"><button id="png">PNG</button><button id="webp">WebP</button><button id="json">設定 JSON</button><label class="button">匯入 JSON<input id="project" type="file" accept="application/json,.json"></label></div></section>
+<p id="message">載入圖片後即可編輯。</p>
+</aside>
+<article>
+<div class="readout"><span id="current">格子 1</span><strong id="counter">01 / 25</strong></div>
+<nav><button data-view="animation" class="active">動畫</button><button data-view="editor">單格編輯</button><button data-view="sheet">完整圖表</button></nav>
+<div class="stage"><div id="empty">等待 spritesheet</div><canvas id="animation" hidden></canvas><canvas id="editor" hidden></canvas><div id="sheetView" hidden><div id="sheetWrap"><img id="sheet"><div id="picker"></div></div></div></div>
+<div class="transport"><button id="prev">←</button><button id="play">▶ 播放</button><button id="next">→</button><label>縮放<input id="zoom" type="range" min="50" max="200" value="100"><output id="zoomOut">100%</output></label></div>
+<section><div class="sequenceHead"><h2>播放順序</h2><span><button id="all">使用全部</button><button id="clear">清空</button></span></div><ol id="sequence"></ol></section>
+</article></main><script type="module" src="/app.js"></script></body></html>
